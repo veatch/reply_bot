@@ -6,7 +6,7 @@ api = tweepy.API()
 
 bot_configs = [
     {
-    'name' : 'snack_bot',
+    'bot_name' : 'snack_bot', # if bot is on a list it watches, this should be name of bot to avoid infinite loops
     'timelines' :
         [ # assumes param lists are unique. If ever not unique, we'll need to work func name into tweet_id_key
         {'func': api.list_timeline, 'params': ('username', 'listname')},
@@ -21,9 +21,10 @@ bot_configs = [
 TWEET_ID_SHELF = 'reply_bot_tweet_ids'
 
 for config in bot_configs:
+    bot_name = config.get('bot_name').lower()
     for timeline in config.get('timelines'):
         args = timeline.get('params')
-        tweet_id_key = '%s_%s' % (config.get('name'), ''.join(['%s' % param for param in args]))
+        tweet_id_key = '%s_%s' % (bot_name, ''.join(['%s' % param for param in args]))
         timeline_func = timeline.get('func')
         kwargs = {}
         tweet_id_shelf = shelve.open(TWEET_ID_SHELF)
@@ -42,7 +43,7 @@ for config in bot_configs:
                 tweet_id_shelf.close()
             for tweet in tweets:
                 for word in config.get('keywords'):
-                    if tweet.text.find(word) > -1:
+                    if tweet.text.find(word) > -1 and tweet.author.screen_name.lower() != bot_name:
                         replies = config.get('replies')
                         oauth_info = config.get('oauth_info')
                         auth = tweepy.OAuthHandler(oauth_info[0], oauth_info[1])
